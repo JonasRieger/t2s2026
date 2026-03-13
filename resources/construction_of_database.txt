@@ -1,0 +1,839 @@
+================================================================================
+METHODOLOGICAL REPORT
+Construction of Socio-Environmental Conflicts Database
+================================================================================
+
+INTRODUCTION
+--------------------------------------------------------------------------------
+
+This report documents the methodological process used for the construction of 
+a news database on socio-environmental conflicts linked to the energy 
+transition in Chile. The implemented system consists of four sequential phases 
+that transform keyword searches in Google News into a structured database 
+classified through artificial intelligence.
+
+The technical development was carried out using Python as the main programming 
+language, with assistance from Claude Sonnet 4.5 (Anthropic) for code 
+optimization and technical problem solving. All code is of own authorship, 
+developed specifically for this research project.
+
+
+================================================================================
+PHASE 1: KEYWORD DEFINITION AND WEB SCRAPING
+================================================================================
+
+1.1 OBJECTIVE
+--------------------------------------------------------------------------------
+
+The first phase aims to define keyword combinations that capture 
+socio-environmental conflicts linked to the energy transition in Chile, and 
+subsequently execute Google News scraping to obtain the metadata of relevant 
+news articles.
+
+
+1.2 KEYWORD DESIGN
+--------------------------------------------------------------------------------
+
+The keyword system is implemented in the file "keywords_transicion.py". This 
+file contains 461 BOOLEAN SEARCH COMBINATIONS organized into thematic 
+categories.
+
+The searches use Boolean operators (AND, OR) with a territorial focus, 
+combining three fundamental elements:
+
+  - Type of project or industry (lithium, thermoelectric, hydroelectric, 
+    wind farm)
+  - Specific affected localities (municipalities, provinces, localities)
+  - Conflict terms (pollution, closure, rejects, complaint, lawsuit, fine)
+
+The file defines conflict constants used in multiple queries:
+
+  CONF = '(pollution OR closure OR rejects OR complaint OR conflict)'
+  CONF_FULL = '(pollution OR closure OR rejects OR complaint OR lawsuit OR 
+               fine OR damage OR conflict OR protest OR court OR orders 
+               OR sanctions)'
+
+DISTRIBUTION OF 461 KEYWORDS BY CATEGORY:
+
+  Category                                           Quantity
+  -------------------------------------------------------
+  Lithium (Salt flats and Atacameño communities)        12
+  Thermoelectric plants (Sacrifice zones)               27
+  Hydroelectric plants (Rivers and basins)              42
+  Copper mining (Valleys and communities)               32
+  Solar energy (Atacama Desert)                         13
+  Wind energy (Coast and mountain range)                27
+  Green hydrogen (Ports and strategic zones)            13
+  Batteries and storage                                  6
+  Biofuels                                               4
+  Electromobility                                        5
+  Geothermal                                            12
+  Electrical transmission                               14
+  Energy ports                                           6
+  Smart grids                                            4
+  Distributed generation                                 5
+  Decarbonization                                        5
+  Just transition                                        6
+  Energy efficiency                                      3
+  Energy communities                                     4
+  Protected areas                                       10
+  Indigenous peoples                                    14
+  Institutional issues                                  28
+  Critical basins                                       12
+  Glaciers                                              10
+  Wetlands                                               5
+  Heritage                                               7
+  Actors (Companies, NGOs, Communities)                 49
+  Events and public policy                              32
+  Additional dimensions                                 54
+  Queries based on real title analysis               ~190
+  -------------------------------------------------------
+  TOTAL                                                461
+
+ELIMINATED CATEGORIES (not linked to energy transition):
+  - Agricultural (slurry, livestock farms)
+  - Forestry-cellulose (without energy component)
+  - Aquaculture (salmon farming)
+  - Traditional port activities
+  - Real estate
+  - Landfills
+  - Aggregates
+
+
+1.3 SCRAPING SCRIPT
+--------------------------------------------------------------------------------
+
+Scraping is executed through the file "scraper.py", which implements the 
+EnhancedTemporalScraper class. This script uses Selenium WebDriver with 
+undetected-chromedriver to navigate to Google News and extract the metadata 
+of each news article found.
+
+TECHNICAL CHARACTERISTICS:
+
+  Driver configuration:
+    The script implements four fallback strategies to configure the Chrome 
+    driver:
+    1. Direct path to chromedriver executable
+    2. undetected-chromedriver
+    3. webdriver-manager
+    4. Minimal configuration
+
+  User-Agent rotation:
+    7 different User-Agents are used, rotating every 10 queries to avoid 
+    detection.
+
+  Pause system:
+    - 4-8 seconds between queries
+    - 15-25 seconds every 10 queries (extended pause)
+    - Incremental save every 50 queries
+
+  Infinite scroll:
+    For each search, the script executes scroll until no more new articles 
+    appear, with a maximum of 200 scrolls as a safety limit.
+
+  CAPTCHA detection:
+    The system detects CAPTCHA patterns in the page content and applies 
+    exponential backoff when blocks are detected.
+
+
+1.4 EXTRACTED DATA
+--------------------------------------------------------------------------------
+
+For each news article found, the scraper extracts and stores the following 
+fields in the Excel file "conflictos_transicion_energetica.xlsx", 
+specifically in the "Datos" (Data) sheet:
+
+  Field              Description
+  ----------------------------------------------------------------
+  id_noticia         Unique sequential identifier
+  titulo             News title
+  descripcion        Brief description extracted from Google News
+  fuente             Media outlet
+  fecha_scraping     Extraction date and time
+  enlace             Google News URL (encrypted)
+  query_original     Keyword that found the news
+  periodo_scraping   Scraping period identifier
+  content_hash       MD5 hash of title+URL for deduplication
+
+
+1.5 DEDUPLICATION
+--------------------------------------------------------------------------------
+
+The system implements deduplication through MD5 hash calculated from the 
+title and URL of each news article. Before adding a news article to the 
+database, it verifies that its hash does not already exist in the 
+existing_hashes set of the DatabaseManager.
+
+
+1.6 TOOLS REQUIRED FOR PHASE 1
+--------------------------------------------------------------------------------
+
+BASE SOFTWARE:
+  - Python 3.10 or higher
+  - Google Chrome (version compatible with chromedriver)
+  - Code editor (Visual Studio Code recommended)
+
+PYTHON LIBRARIES:
+  pip install selenium undetected-chromedriver webdriver-manager pandas openpyxl
+
+PROJECT FILES:
+  - scraper.py - Main scraping script
+  - keywords_transicion.py - Keyword definitions
+  - database_manager.py - Excel database management
+
+
+================================================================================
+PHASE 2: URL ENRICHMENT (GOOGLE COLAB)
+================================================================================
+
+2.1 OBJECTIVE
+--------------------------------------------------------------------------------
+
+The second phase aims to convert the encrypted Google News URLs to real URLs 
+and extract the complete content of each news article. This phase is executed 
+in Google Colab because each session uses a different IP address, which helps 
+avoid blocks by Google News.
+
+
+2.2 GOOGLE NEWS URL PROBLEM
+--------------------------------------------------------------------------------
+
+The URLs obtained in Phase 1 have the format:
+  https://news.google.com/read/...
+  https://news.google.com/rss/articles/...
+
+These are encrypted URLs that redirect to the original article. To access 
+the complete content of each news article, it is necessary to resolve these 
+URLs to their final destinations.
+
+
+2.3 ENRICHMENT SCRIPT
+--------------------------------------------------------------------------------
+
+Enrichment is performed through the file "codigo_final.py", which implements 
+multiple strategies to resolve URLs and extract content.
+
+URL RESOLUTION:
+  The script uses the googlenewsdecoder library as the main method to decode 
+  Google News URLs. As a fallback, it implements HTTP redirect following.
+
+CONTENT EXTRACTION:
+  Two main libraries are used in order of priority:
+  1. trafilatura - Specialized web content extractor
+  2. newspaper3k - Alternative library for article extraction
+
+DATE NORMALIZATION:
+  The dateparser library is used to convert dates in various formats to 
+  standard ISO format.
+
+
+2.4 ADDED COLUMNS
+--------------------------------------------------------------------------------
+
+The script adds the following columns to the "Datos_enriquecidos" (Enriched 
+Data) sheet of the same Excel file:
+
+  Field                 Description
+  ----------------------------------------------------------------
+  URL_Directa           Real article URL
+  Metodo_Resolucion     Method used (gnewsdecoder, redirect, etc.)
+  Titulo_Extraido       Title extracted from the actual page
+  Contenido_Completo    Complete article text
+  Autor                 Article author if available
+  Fecha_Extraida_ISO    Date in ISO format
+  Palabras              Word count of content
+  Estado_Procesamiento  successful, no_content, url_not_resolved
+  Hash_Contenido        MD5 of content for deduplication
+  Fuente_Dominio        Site domain (e.g., emol.com)
+
+
+2.5 EXECUTION IN GOOGLE COLAB
+--------------------------------------------------------------------------------
+
+Processing is done in batches of 500 news articles to avoid Google News 
+limits. All code is executed in a single Colab cell:
+
+--- COLAB CODE (single cell) ---
+
+# INITIAL CONFIGURATION
+from google.colab import drive
+drive.mount('/content/drive')
+!pip install pandas openpyxl googlenewsdecoder requests beautifulsoup4 \
+             trafilatura newspaper3k dateparser -q
+!cp "/content/drive/MyDrive/[YOUR_FOLDER]/conflictos_transicion_energetica.xlsx" \
+    /content/datos.xlsx
+!cp "/content/drive/MyDrive/[YOUR_FOLDER]/codigo_final.py" /content/
+print("✅ Ready")
+
+# FIRST BATCH (adjust --start-from according to progress)
+!python /content/codigo_final.py --excel /content/datos.xlsx \
+        --start-from 1 --limit 500 --save-frequency 50 --use-cache
+!cp /content/datos.xlsx \
+    "/content/drive/MyDrive/[YOUR_FOLDER]/conflictos_transicion_energetica.xlsx"
+
+# SECOND BATCH (optional, in the same session)
+!python /content/codigo_final.py --excel /content/datos.xlsx \
+        --start-from 501 --limit 500 --save-frequency 50 --use-cache
+!cp /content/datos.xlsx \
+    "/content/drive/MyDrive/[YOUR_FOLDER]/conflictos_transicion_energetica.xlsx"
+
+--- END CODE ---
+
+The --start-from value is manually adjusted according to progress. After 
+each batch, the file is saved to Google Drive to preserve progress. Multiple 
+batches can be processed in a single Colab session.
+
+
+2.6 SCRIPT PARAMETERS
+--------------------------------------------------------------------------------
+
+  Parameter        Description                              Value Used
+  -----------------------------------------------------------------------
+  --excel          Input Excel file                         datos.xlsx
+  --start-from     Row to start from (1-indexed)            According to progress
+  --limit          Number of rows to process per batch      500
+  --save-frequency Save progress every N rows               50
+  --use-cache      Use SQLite cache to avoid reprocessing   Always
+
+
+2.7 TOOLS REQUIRED FOR PHASE 2
+--------------------------------------------------------------------------------
+
+GOOGLE ACCOUNT:
+  Required to access Google Colab and Google Drive.
+
+PYTHON LIBRARIES (installed in Colab):
+  pip install pandas openpyxl googlenewsdecoder requests beautifulsoup4 \
+              trafilatura newspaper3k dateparser
+
+FILES NEEDED IN GOOGLE DRIVE:
+  - conflictos_transicion_energetica.xlsx - Database with URLs
+  - codigo_final.py - Enrichment script
+
+
+================================================================================
+PHASE 3: ARTIFICIAL INTELLIGENCE FILTERING
+================================================================================
+
+3.1 OBJECTIVE
+--------------------------------------------------------------------------------
+
+The third phase aims to automatically classify each news article according to 
+defined methodological criteria, determining whether it corresponds to a 
+socio-environmental conflict linked to the energy transition and, if so, 
+classifying its characteristics through a multi-dimensional analysis system.
+
+
+3.2 MODULAR SYSTEM ARCHITECTURE
+--------------------------------------------------------------------------------
+
+The filtering system implements a modular architecture that separates 
+responsibilities into specialized components:
+
+  Component                   Function
+  ---------------------------------------------------------------------------
+  clasificaciones.yaml        Centralized configuration of categories,
+                              definitions and classification criteria
+  filtrador_analisis.py       AI analysis logic and validation
+  filtrador_procesamiento.py  Excel management and incremental saving
+  filtrador_config.py         Dynamic configuration loading from YAML
+  filtrador_estadisticas.py   Consolidated statistics generation
+  observabilidad.py           Metrics, traceability and circuit breaker
+  mapeos_clasificacion.py     Category and region normalization
+
+
+
+
+3.3 ARTIFICIAL INTELLIGENCE MODEL
+--------------------------------------------------------------------------------
+
+The system uses Google's GEMINI 3.0 FLASH model as the main model, with 
+support for multiple providers:
+
+  1. Google AI (direct Gemini API) - Recommended
+  2. OpenRouter (intermediary with multiple models)
+
+API configuration is done through a .env file in the application's root 
+folder:
+
+  GEMINI_API_KEY=your_api_key_here
+  OPENROUTER_API_KEY=your_api_key_here
+
+AI SYSTEM CHARACTERISTICS:
+
+  Structured validation:
+    The system uses Pydantic to validate that AI responses comply with the 
+    expected schema, ensuring data consistency.
+
+  Retries with exponential backoff:
+    Using the Tenacity library, the system implements automatic retries with 
+    exponential waiting when transient errors occur.
+
+  Circuit breaker:
+    Protection system that temporarily stops API calls when multiple 
+    consecutive errors are detected, avoiding unnecessary expenses and 
+    allowing automatic recovery.
+
+  Observability:
+    Detailed logging of each API call including tokens used, response time, 
+    estimated costs, and errors.
+
+
+3.4 CONTEXTUAL PROMPT SYSTEM
+--------------------------------------------------------------------------------
+
+The system uses an extensive base prompt defined in the "clasificaciones.yaml" 
+file that is complemented with dynamic context injection:
+
+PROMPT STRUCTURE:
+
+  1. Role and context definition
+  2. Energy transition scope (what to include and exclude)
+  3. Operational definition of contentious action
+  4. Valid categories for each field
+  5. Mapping and normalization rules
+  6. Edge case examples
+  7. Expected JSON response format
+
+DYNAMICALLY INJECTED CONTEXT:
+
+  The system detects patterns in the title and content of each news article 
+  to inject specific context that improves classification accuracy:
+
+  - Lithium and salt flats: Context about Atacameño communities and SQM/Albemarle
+  - Sacrifice zones: Context about Quintero-Puchuncaví and Coronel
+  - Copper mining: Context about community land division
+  - Hydroelectric plants: Context about conflicts in southern rivers
+  - Wind energy: Context about impact on birds and coastal communities
+
+ENERGY TRANSITION SCOPE:
+  
+  INCLUDE:
+    - Renewable energies (solar, wind, hydroelectric, geothermal)
+    - Decarbonization and thermoelectric plant closures
+    - Critical mineral mining (lithium, copper for electromobility)
+    - Green hydrogen and electromobility
+    - Electrical transmission infrastructure
+    - Social dimension of transition (just transition)
+    - Territorial impacts of energy projects
+    - Sacrifice zones linked to electricity generation
+
+  EXCLUDE:
+    - Non-critical mining (gold, silver, iron without energy component)
+    - Forestry projects without energy component
+    - Aquaculture and salmon farming
+    - Real estate projects without energy component
+    - Traditional agriculture without energy impact
+    - Road conflicts without transition component
+
+CONTENTIOUS ACTION DEFINITION:
+  
+  DISCOMFORT WITHOUT ACTION (exclude):
+    - Expressed concern without specific action
+    - Fear or uncertainty without mobilization
+    - Opinion without clear addressee
+  
+  CONTENTIOUS ACTION (include):
+    - Public statement directed at authorities
+    - Formal complaint to competent bodies
+    - Legal remedies (protection, nullity, injunction)
+    - Protests, marches and demonstrations
+    - Blockades, takeovers and shutdowns
+    - Organized communication campaigns
+
+
+3.5 CLASSIFICATION CATEGORIES
+--------------------------------------------------------------------------------
+
+All categories are defined in the "clasificaciones.yaml" file and are loaded 
+dynamically when the application starts.
+
+CONFLICT TYPES (17 categories):
+  - Energy project opening
+  - Energy project operation
+  - Energy project closure
+  - Mining project opening
+  - Mining project operation
+  - Mining project closure
+  - Critical minerals conflict
+  - Green hydrogen conflict
+  - Transmission lines conflict
+  - Water conflict linked to energy
+  - Territorial/indigenous conflict
+  - Land use conflict
+  - Biodiversity/ecosystem conflict
+  - Sacrifice zones
+  - Just transition/Labor reconversion
+  - Energy justice/Energy access
+  - Clean technology waste
+
+CONTENTIOUS ACTION TYPES (16 categories):
+  - Public statement/Letter
+  - Media campaign/Awareness
+  - Complaint to authorities
+  - Environmental process participation
+  - Legal remedy
+  - Boycott/Divestment
+  - Protest/Demonstration
+  - Civil disobedience
+  - Hunger strike
+  - Road closure/Blockade
+  - Land/infrastructure takeover
+  - Strike/Work stoppage
+  - Dialogue/Working group
+  - Administrative sanction
+  - Citizen consultation
+  - Violent action
+
+CLAIMANT ACTORS (11 categories):
+  - Indigenous communities
+  - Territorial organizations
+  - Environmental NGOs
+  - Academia/Experts
+  - State agencies
+  - Unions/Workers
+  - Companies
+  - Business associations
+  - Individual citizens
+  - Coalition of actors
+  - Other
+
+DEFENDANT ACTORS (9 categories):
+  - Energy company
+  - Mining company
+  - Public company (state-owned)
+  - Private company (other)
+  - State agencies
+  - Industrial company
+  - Financiers/Investors
+  - Communities
+  - Other
+
+ADDITIONAL CLASSIFICATION FIELDS:
+
+  Region:
+    Chile's 16 regions plus special categories (National, Multiple).
+    The system automatically normalizes spelling variations.
+
+  Economic sector (10 categories):
+    - Mining
+    - Renewable energy
+    - Conventional energy
+    - Hydrocarbons
+    - Energy infrastructure
+    - Industrial
+    - Water/Water resources
+    - Territorial/Indigenous
+    - Transport/Electromobility
+    - Multiple
+
+  Conflict scale (5 levels):
+    - Local (one community or locality)
+    - Municipal (multiple localities in one municipality)
+    - Provincial (multiple municipalities)
+    - Regional (regional scope)
+    - National (country-wide repercussion)
+
+  Link to energy transition (3 levels):
+    - Direct: The conflict is directly caused by an energy transition project
+    - Probable: There is a clear but indirect relationship
+    - Indirect: The relationship requires contextual inference
+
+  Emotional tone:
+    Qualitative analysis of the predominant tone in claimant actors' 
+    statements (determination, indignation, hopelessness, etc.).
+
+  Keywords:
+    List of relevant compound terms extracted from content 
+    (e.g., "Atacama Salt Flat", "sacrifice zone", "just transition").
+
+
+3.6 DETERMINISTIC PREFILTER
+--------------------------------------------------------------------------------
+
+Before sending each news article to the AI, the system applies a deterministic 
+prefilter that detects known false positive patterns:
+
+DETECTED PATTERNS:
+
+  Analysis/opinion articles:
+    - "Lights and shadows of..."
+    - "Analysis:", "Column:", "Editorial:"
+    - Balance or reflection without specific event
+
+  Administrative advances without opposition:
+    - "Pact advances...", "Authorizes extraction..."
+    - Commercial agreements without conflict
+
+  Investment announcements without opposition:
+    - "Will invest US$...", "New plant of..."
+    - Announced projects without social resistance
+
+PREFILTER BEHAVIOR:
+
+  If suspicious pattern detected AND NO contentious action words:
+    → Automatic exclusion (Reason 9: Announcement without opposition)
+
+  If suspicious pattern detected AND YES contentious action words:
+    → Sent to AI but marked for manual review
+
+  If no suspicious pattern detected:
+    → Normal AI processing
+
+
+3.7 EXCLUSION REASONS
+--------------------------------------------------------------------------------
+
+The system defines 13 exclusion reasons with standardized format:
+
+  Reason    Description
+  ----------------------------------------------------------------
+  Reason 1  Link not available (URL not accessible)
+  Reason 2  Duplicate (content already processed)
+  Reason 3  Not a conflict (not linked to energy transition)
+  Reason 4  CSR/inauguration without conflict
+  Reason 5  Not from Chile (news from another country)
+  Reason 6  Academic article/paper (not news)
+  Reason 7  Discomfort without contentious action
+  Reason 8  Historical report (without current event)
+  Reason 9  Announcement without opposition
+  Reason 10 Court ruling only (without social conflict)
+  Reason 11 Oversight only (without citizen action)
+  Reason 12 No content (sent to Manual_Content)
+  Reason 13 Processing error (automatically reprocessed)
+
+
+3.8 VALIDATION AND NORMALIZATION
+--------------------------------------------------------------------------------
+
+PYDANTIC VALIDATION:
+
+  Each AI response is validated against a Pydantic model that verifies:
+  - Required fields present
+  - Correct data types
+  - Values within allowed categories
+  - Logical consistency (e.g., if exclude=True, there must be a reason)
+
+CATEGORY NORMALIZATION:
+
+  The system applies normalization mappings to correct spelling variations 
+  and synonyms. For example:
+
+  - "Metropolitan Region of Santiago" → "Metropolitan Region"
+  - "Union/Workers" → "Unions/Workers"
+  - "Environmental NGO" → "Environmental NGOs"
+
+  Mappings are defined in the "mapeos_clasificacion.py" file.
+
+
+3.9 OUTPUT FILES
+--------------------------------------------------------------------------------
+
+The application generates a new Excel file whose name is derived from the 
+input file, adding the suffix "_filtrado" (filtered). The file contains the 
+following sheets:
+
+  Sheet              Content
+  ----------------------------------------------------------------
+  Datos_completos    All processed news with classification
+  Datos_filtrados    Included news (valid conflicts)
+  Datos_excluidos    Excluded news with reason and explanation
+  Revision_manual    News marked for human review
+  Contenido_Manual   News without content for manual scraping
+  Estadisticas       Statistical summary of processing
+
+
+3.10 REPORT GENERATION
+--------------------------------------------------------------------------------
+
+The system includes a professional report generation module 
+(generador_reportes.py) that produces:
+
+  Charts:
+    - Word cloud by compound terms
+    - Distribution by conflict type
+    - Temporal evolution of conflicts
+    - Geographic distribution by region
+    - Actor analysis (claimants and defendants)
+    - Contentious action types
+    - Economic sectors involved
+    - Exclusion reasons
+    - Temporal heatmap (month x year)
+
+  Files:
+    - informe_ejecutivo.txt: Complete textual report
+    - metricas.json: Metrics in structured format
+    - terminos_frecuentes.xlsx: List of key terms sorted by frequency
+    - graficos/ folder: All charts in PNG format
+
+
+3.11 TOOLS REQUIRED FOR PHASE 3
+--------------------------------------------------------------------------------
+
+BASE SOFTWARE:
+  - Python 3.10 or higher
+  - Tkinter (included in standard Python)
+
+PYTHON LIBRARIES:
+  pip install pandas openpyxl google-generativeai python-dotenv pydantic \
+              tenacity pyyaml requests matplotlib seaborn wordcloud
+
+API KEY:
+  A Gemini API Key (Google AI) is required.
+  Approximate cost: ~$0.0001 USD per processed news article.
+
+PROJECT FILES:
+  - main.py - Application entry point
+  - src/core/clasificaciones.yaml - Category configuration
+  - src/core/filtrador_analisis.py - AI analysis logic
+  - src/core/filtrador_procesamiento.py - Excel processing
+  - src/core/filtrador_config.py - Configuration loading
+  - src/core/filtrador_estadisticas.py - Statistics generation
+  - src/core/observabilidad.py - Metrics and traceability
+  - src/core/mapeos_clasificacion.py - Category normalization
+  - src/ui/app.py - Graphical interface
+  - generador_reportes.py - Professional report generation
+
+
+================================================================================
+PHASE 4: MANUAL REVIEW AND REPROCESSING
+================================================================================
+
+4.1 OBJECTIVE
+--------------------------------------------------------------------------------
+
+The fourth phase aims to review and complete cases that the artificial 
+intelligence could not fully process, either due to lack of content or 
+classification ambiguity.
+
+
+4.2 CASES REQUIRING REVIEW
+--------------------------------------------------------------------------------
+
+NEWS WITHOUT CONTENT OR INCOMPLETE INFORMATION:
+  These are news articles where the enrichment script could not extract the 
+  complete article text (Reason 12: No content) or where the extracted 
+  information is insufficient for adequate classification (Reason 9: 
+  Incomplete information). These news articles are listed in the 
+  "Contenido_Manual" (Manual Content) sheet.
+
+AMBIGUOUS CLASSIFICATION:
+  News where the AI marked the "requiere_revision_manual" (requires manual 
+  review) field as true due to contradictory information, unrecognized types, 
+  or weak energy transition justification.
+
+
+4.3 MANUAL REVIEW PROCESS
+--------------------------------------------------------------------------------
+
+For news without content, the process is as follows:
+
+  1. Open the "Contenido_Manual" sheet of the results file
+  2. For each news article, visit the URL indicated in the "link_noticia" field
+  3. Copy the complete article content
+  4. Paste the content in the "contenido_noticia" field of the sheet
+  5. Save the Excel file
+  6. Run the filtering application again selecting the reprocess option
+
+The application automatically detects news articles with manually added 
+content and processes them again with the AI.
+
+
+4.4 TOOLS REQUIRED FOR PHASE 4
+--------------------------------------------------------------------------------
+
+  - Web browser to access original URLs
+  - Microsoft Excel or LibreOffice Calc to edit the file
+  - Filtering application for reprocessing
+
+
+================================================================================
+DUPLICATE HANDLING
+================================================================================
+
+During the database construction process, 127 duplicate news articles were 
+identified and eliminated. Duplicates originated because multiple Google News 
+URLs can point to the same actual article. Deduplication was performed using 
+the "URL_Directa" field as the main criterion.
+
+The complete list of eliminated duplicates is documented in the file 
+"DUPLICADOS_ELIMINADOS.txt". A backup of the original file was created before 
+elimination and the file without duplicates was saved as 
+"conflictos_transicion_energetica_SIN_DUPLICADOS.xlsx".
+
+
+================================================================================
+SYSTEM FILES SUMMARY
+================================================================================
+
+MAIN SCRIPTS:
+
+  File                       Location                     Function
+  ---------------------------------------------------------------------------
+  keywords_transicion.py     Archivos utiles/             Definition of 651 
+                                                          keywords
+  scraper.py                 Archivos utiles/             Google News web 
+                                                          scraping
+  database_manager.py        Archivos utiles/             Excel database 
+                                                          management
+  codigo_final.py            Archivos utiles/             URL enrichment 
+                                                          (Colab)
+  main.py                    app_de_filtrado/app_3.0/     AI filtering 
+                             fondecyt_filtrador/          application
+
+DATA FILES:
+
+  File                                     Sheets
+  ---------------------------------------------------------------------------
+  conflictos_transicion_energetica.xlsx    Datos, Datos_enriquecidos
+                                           (Scraping and enrichment database)
+  
+  resultados_filtrado.xlsx                 Datos_completos, Datos_filtrados,
+                                           Datos_excluidos, Revision_manual,
+                                           Contenido_Manual
+                                           (AI filtering results)
+
+
+================================================================================
+CONSOLIDATED TECHNICAL REQUIREMENTS
+================================================================================
+
+SOFTWARE:
+  - Python 3.10 or higher
+  - Google Chrome (for Selenium)
+  - Google account (for Colab and Drive)
+  - Code editor (Visual Studio Code recommended)
+
+PYTHON LIBRARIES:
+
+  # Phase 1: Scraping
+  pip install selenium undetected-chromedriver webdriver-manager pandas openpyxl
+
+  # Phase 2: Enrichment
+  pip install googlenewsdecoder requests beautifulsoup4 trafilatura \
+              newspaper3k dateparser
+
+  # Phase 3: Filtering
+  pip install google-generativeai openai python-dotenv matplotlib seaborn
+
+API KEYS:
+  - Gemini API Key (Google AI) or OpenRouter: For artificial intelligence filtering
+
+
+================================================================================
+CONCLUSIONS
+================================================================================
+
+The developed system allows automating the construction of a socio-environmental 
+conflicts database from Google News articles. The combination of web scraping, 
+cloud processing, and artificial intelligence classification enables processing 
+large volumes of news efficiently, maintaining rigorous methodological criteria 
+defined in the classification prompts.
+
+The modular system architecture allows easily adapting search keywords, 
+classification criteria, and analysis categories according to the specific 
+needs of each research project.
+
+================================================================================
+END OF REPORT
+================================================================================

@@ -1,0 +1,77 @@
+Please make it possible to also select "Corpus" in the dropdown menu, i.e. leading to the coloring of the map w.r.t. the average counts over all topics. This should be the default setting from start of the dashboard.
+
+Please place the Zoom level slider and the time slider also in the "Controls" window just below the "Location granularity" dropdown menu, and the Topic Prevalence legend at the very bottom in the "Controls" window.
+
+Please make it possible in the same sense as for the "Corpus" setting that one can select the whole period for the time slider, i.e. the average counts over all periods. This should also be the default setting from start of the dashboard.
+
+In all figures, tables, and visualizations please replace the YYYY-MM values by the YYYY value, so just neglect the months. In addition, remove the small rectangle on the top left indicating the year and month.
+
+Please add side-by-side barplots to all regions (but not if the location granularity is selected to be Province or Comuna) that include the share for the clusters in that region for the given period. These barplots should only be viewed if all topics (i.e Corpus) is/are selected.
+
+Please add a tickbox below of the "View Mode" dropdown menu to let the user decide (then, also independent of the granularity level) whether the barplots should be shown.
+
+Please adjust the coloring of the map for the "Corpus" mode. Right now just everything is red. Maybe this is because the values are not normalized by the number of topics. The coloring should still represent the value for the respective region/province/comuna. It feels like there are no differences in the regions. In addition, please just show the top words per year for the "Corpus" mode instead of the top words per topic.
+
+Please move the overall prevalence over time and the gini coefficient figure in a window below the "Controls" window and entitle it with "Global Figures". The figure showing the overall prevalence over time should be replaced by a figure of the "Number of Articles Over Time" (i.e. absolute number of articles) for the "Corpus" mode.
+
+Please use your language model backbone to create short titles for the topics based on the overall top words per topic and use these at all relevant positions (e.g., dropdown menu of topic selection, top words title, legend of figure if one clicks a region, ...).
+
+Please write the respective short title of the topic into a csv file, together with a natural language explanation of the topic (of approx. 2 sentences - again using your language model backbone and the topic structure) and the topic id. Please rewrite the code in Postprocessing in such a way that it is generic (i.e., if no topic names/explanation file is provided it should fallback to "Topic X"), but in our case it reads the respective file.
+
+Please move the "Global Figures" window to the left top and entitle it with the respective short topic title if a topic is selected and with "Corpus" if "Corpus" mode is on. Please place the generated topic description at the top of this window, then the top words (currently in the "Controls" window) and then the two other figures. For the top words please provide the English translation if one hovers over a word. For this, generate another dictionary including all top words relevant for our use case and the respective English translation. The file should be read in. If no translation dictionary is provided the translation functionality should be switched off.
+
+Topic short titles should be preceded by a "TX: " indicating that this is the topic with the number "X". Please start counting with 1, i.e. start with "T1: <short title for the first topic>". Please adjust the figure showing the overall prevalence over time to always show the selected topic's curve in the same color as already used in the figure if one clicks a region. All other curves should be displayed as well but only in very light grey in the background. If one hovers over a curve in the background the respective curve should be highlighted in this topic's color in addition to the selected topic in the dropdown menu. In addition the short title of this topic should be shown. If one clicks on the respective curve this topic should be selected from the dropdown menu (i.e. everything should adapt to this selection).
+
+Please move the counts of "locations" and "documents" from the window "Controls" to the left window plus add the information of the selected time period as well, i.e. "Time Period: ... Documents: ... Locations: ...". Place it directly under the title of the window. In addition, please double the height of the "Overall Prevalence Over Time" figure. Please add a figure showing the absolute topic counts per location over time, i.e. one curve per region. The figure should be placed under the "Number of Articles Over Time" figure for the "Corpus" mode and under the "Overall Prevalence Over Time" figure if a topic is selected. It should be entitled "Topic Counts in Locations Over Time" in the "Topic" mode and "Number of Articles in Locations Over Time" in the "Corpus" mode.
+
+In the Postprocessing.py file, please move the stats of time period, documents and locations from the upper left window to a new center bottom rectangle - without any surrounding window, but just the grey rectangle. Please show the location names in the map if one hovers the area of it. In addition, please add a figure to the window that opens after clicking a location. That new figure entitled "Number of Documents Over Time" should display the number of documents over time in that location. It should be placed above the topic/cluster prevalence figure. Add an explanation at the top of the legend of the topic/cluster prevalence figure indicating that one can deselect curves by clicking the legend item. Write the granularity levels (province, comuna, region) in upper case. Change the title of the whole window to just the location name and put the title "Topic Prevalence", resp. "Cluster Prevalence" as title for the topic/cluster prevalence figure.
+
+For the "Document-level Topic Counts in Top 10 Locations", please adjust the figure to display the real topic counts on word-level, i.e. the number of words that are assigned to a topic. If one clicks on a curve of a location in that figure, please do the same action as if one clicks the location in the map. If one clicks on a curve in the "Overall Topic Prevalence" figure, please also change the selected period of the slider instead of always jumping to "All Periods". Please adjust the drawing of the Province borders. Right now - instead of the Province borders - the borders of the Comunas are drawn.
+
+I think you understood it incorrectly. I like to have the region borders to be drawn if "Region" is selected, the province borders if "Province" is selected and the comuna borders if "Comuna" is selected. Please adjust.
+
+Please also show the "Topic prevalence" figure in the popup window which appears if a curve in the "Word-level Topic Counts in Top 10 Locations" is clicked. Please visualize the "Number of Documents" figure in the "Corpus" mode as barplot instead as a curve. Please calculate the Gini coefficient based on the word-level based topic counts instead of the raw prevalences.
+
+In the "Corpus" mode, please fix the hover functionality for the "Number of Documents" figure. The "Topic Prevalence" figure in the popup window is still not properly shown. It only displays the title "Topic Prevalence" and the note regarding the legend: "click on legend items ...".
+
+You also changed the hover functionality of the "Overall Topic Prevalence" figure ("Topic" mode) incorrectly. Please restore the hover functionality of the backup file "Postprocessing_bu.py". 
+
+I have a CSV file ("cluster_sets.csv") defining different clusters, each by a set of topics. Please rewrite the cluster integration (in "Postprocessing.py") in such a way that it reads such a provided CSV. Please adjust all functionality connected to the clusters so that all defined clusters are visualized properly. E.g., in the dropdown menu for "CLUSTERS", please use titles of the style "C1: <short title of cluster 1>", where you should generate short title leveraging your language model backbone based on the topics that build the respective cluster. Please also generate natural language descriptions for the clusters in the same manner as for the topic descriptions. 
+
+If VIEW MODE is "Clusters", please change the title of the left window to the generated short title of the selected cluster as described before. Place the cluster description below this title in the same style as for the "Topics" mode. Update the "cluster_sets.csv" with the two columns "title" and "description" that you generated before.
+
+Please change the first figure in the left window "Overall Topic Prevalence" if the "Clusters" mode is selected to a style similar to the figure for the topics, i.e. here please plot the curves for all clusters with the selected cluster being highlighted and all other clusters being in the background in a light grey. Please implement the same functionality regarding clicking and hovering as it is already present for the "Topics" mode for the figure at this position. Please fix the second figure in this window to display the Word-level Cluster Counts in Top 10 Locations, i.e. sum up the Word-level Topic Counts for the set of topics defining each cluster.
+
+Right now it does not work properly that the left window is correctly generated for the "Clusters" mode. I think this is true, since in the background still the "Corpus" mode (from the topics dropdown menu) is on. Please, always switch the "Corpus" mode off if in the view mode drop down menu "Clusters" is selected.
+
+For the Top Words of the clusters (left window, directly below the cluster description), please do not show the top words of each topic separated by commas, but determine the top words for the whole cluster which are defined by the respective set of topics. Directly below the title of the whole window, please insert the information of which topics the respective cluster consists. Please make the tick box and the text of "Show Cluster Prevalences in Map" bigger so that it is comparable to the drop down menus. If the "Show Cluster Prevalences in Map" option is selected, please show the cluster prevalence values if one hovers over the barplot of one location.
+
+Please write the information out of which topics a cluster is defined line by line, i.e. each topic's title should be in a new line. Please adjust the title of the gini figure for the three different modes "Corpus", "Topic", or "Cluster".
+
+Please have a look into "Postprocessing.py". For the top words of the clusters (left window, directly below the cluster description), please do not show the top words of the cluster by showing the top words of each topic separated by commas (i.e., top word for topic 1, top word topic 2, etc...), but determine the top words for the whole cluster which are defined by the respective set of topics. That is, please transform the table so that each cell contains only one word, namely the respective ranked top word of the cluster in that time period.
+
+Please use the "cluster_sets.csv" to get the cluster title and description instead of generating it using a function inside of Postprocessing.py.
+
+The "Topic Prevalence" figure in the popup window is still not properly shown in the case one clicks on the figure in the middle in the left window. The popup window opens but it does not display the "Topic Prevalence" curves. It only displays the title "Topic Prevalence" and the note regarding the legend: "click on legend items ...".
+
+Please, for all figures, add a small icon to be able to export the figure.
+
+I want to update the script (that generates a HTML) in scripts/Postprocessing.py. Please add the functionality if one hovers over a location in the map that the prevalence of this location is additionally displayed to the location's name. In the popup window for the location, if one hovers over the number of documents, please show the top words of all documents in that location for the respective time period.
+
+For the "Corpus" mode, please use the term "Documents" instead of "Prevalence" (and also just integer values) in the hover functionality for the locations. For the coloring of the map (and the respective hover functionality) in the "Topics" and "Clusters" mode, please calculate the prevalence of the selected topic/cluster normalized by all locations, i.e. the prevalences visualized should sum up to one. Please make sure that you normalize the word-level topic counts per location and not the (already normalized) prevalences.
+
+Now, in "Topics" and "Clusters" mode all prevalences are given as 0. Please check the calulation here.
+
+Please have a look at the top words that are displayed in the popup window as hover functionality for the number of documents. I want to update the visualization in a manner that in addition to the original Spanish word there should be displayed an English translation of the word. Please include this into the hover functionality.
+
+Please only show the top 5 words (instead of 10) in the locations popup.
+
+I want to add some hover functionality for the top words table for the respective topic that is shown if one clicks on "Top Words" (left window). Please show the English translation for all words in the table cells if one hovers over the word. Please add a toggle at the top of the table with options EN (showing the English translations in the table itself) and ES (showing the original Spanish words). The hover functionality should show ES words if EN is selected and the other way around.
+
+I want to add some hover functionality for the top words table (only of the topics, not for the corpus or the clusters) to show some word impact values. These word impact values are saved in word_impacts.pickle. Please read in and extract the values for the 5 significant word impacts. The values should be shown as a horizontal barplot (one bar per word), if one hovers over a year in the title row of the table. For the first year, there are no word impacts.
+
+Since all word impact values are negative, please just cut the axis of the barplots in the way that only negative values are displayed (to save space). Right now the barplot is not easy to read, since it seems to be transparent. Please make it solid as an overlay over the table so that it is not disturbed by the words in the table. Please add the translations of the words in parenthesis behind the Spanish original.
+
+If one hovers over the top ranked word in the top words table the translation functionality does not show up. It is behind the row title. Please fix.
+
+Make it possible to download the top words tables as CSV. Place the download button on the top right next to the language toggle. Use the same icon as for the figure download button.
