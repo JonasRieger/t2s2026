@@ -1,0 +1,24 @@
+[project]
+name = "cet"
+version = "0.1.0"
+description = "Package for the Text2Story Paper about the Energy Transition in Chile"
+authors = [
+    {name = "Lars Grönberg"}
+    {name = "Jonas Rieger"}
+    {name = "Kai-Robin Lange"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "spacy",
+    "pandas",
+    "numpy",
+    "matplotlib",
+    "wordcloud",
+    "ttta"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
