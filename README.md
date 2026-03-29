@@ -10,3 +10,35 @@ This repository provides some data and scripts related to the paper:
 For bug reports, comments and questions please use the [issue tracker](https://github.com/JonasRieger/t2s2026/issues).
 
 Please note: For legal reasons the repository cannot provide all data, e.g., the scraped data are deleted. Please let us know if you feel that there is anything missing that we could add.
+
+
+## Development Setup
+
+To start the development setup, we suggest to install the small package as an editable package. This allows for easier imports for the constructed functions. With the installation of an editable package, the package contents can also be changed without reinstallation during development.
+
+### Package Installation
+To install the package do the following:
+
+1. Go to the root of the project
+2. Execute `pip install --editable .` in the terminal, which installs the package to get an editable installation
+3. Use the package via `import cet`, where cet stands for chilean energy transition.
+4. Download the spacy models via:
+   1. python -m spacy download es_core_news_sm
+   2. python -m spacy download es_core_news_lg
+   3. python -m spacy download es_core_news_md
+      For the small, large and medium spacy preprocessing models.
+5. Create a secrets.json file in the root of the project with the content of the secrets_example.json file.
+
+### Configuration File
+
+The follwoing defines the current **config.json** settings.
+
+```json
+{
+  "model_save_path": "data/models", // basepath where model results should be stored.
+  "start_date_data": "2011-01-01", // start date for the analysis and preprocessing
+  "num_workers": 6, // number of processes to spawn
+  "spacy_pipeline": "es_core_news_lg", // spacy pipeline to use
+  "words_to_exclude": [] // list contains words to exclude
+}
+```
