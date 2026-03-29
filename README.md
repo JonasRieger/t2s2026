@@ -31,7 +31,7 @@ To install the package do the following:
 
 ### Configuration File
 
-The follwoing defines the current **config.json** settings.
+The follwoing defines the current **config.json** settings. Please see the _config.json_ file for the current definition.
 
 ```json
 {
